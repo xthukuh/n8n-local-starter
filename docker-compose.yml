@@ -1,4 +1,6 @@
 services:
+
+  # https://hub.docker.com/_/postgres
   postgres:
     image: postgres:16
     restart: always
@@ -8,15 +10,18 @@ services:
       - POSTGRES_DB
       - POSTGRES_NON_ROOT_USER
       - POSTGRES_NON_ROOT_PASSWORD
+    ports:
+      - "5432:5432"
     volumes:
       - ./volumes/postgres:/var/lib/postgresql/data
-      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh
+      - ./init-data.sh:/docker-entrypoint-initdb.d/init-data.sh:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # https://hub.docker.com/r/n8nio/n8n
   n8n:
     image: docker.n8n.io/n8nio/n8n
     restart: always
@@ -27,22 +32,35 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_NON_ROOT_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_NON_ROOT_PASSWORD}
-        # New n8n Public URL and Settings
       - N8N_EDITOR_BASE_URL
       - WEBHOOK_URL
-      - N8N_COMMUNITY_PACKAGES_ALLOW # Allows installation of community nodes
-      - N8N_DEFAULT_BINARY_DATA_MODE # Stores binary data (like uploaded files) on the filesystem
-        # instead of in memory, improving stability for larger files.
+      - N8N_COMMUNITY_PACKAGES_ALLOW
+      - N8N_DEFAULT_BINARY_DATA_MODE
     ports:
-      - 5678:5678
-    links:
-      - postgres
+      - "5678:5678"
     volumes:
       - ./volumes/n8n:/home/node/.n8n
     depends_on:
       postgres:
         condition: service_healthy
 
+  # https://hub.docker.com/r/dpage/pgadmin4
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - ./volumes/pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 # docker compose up -d
 # ngrok http --url=nursing-linseed-flop.ngrok-free.dev 5678
-# postgres admin: http://localhost:5050
+# n8n:      http://localhost:5678
+# pgAdmin:  http://localhost:5050
+# Postgres: localhost:5432

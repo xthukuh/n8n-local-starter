@@ -6,3 +6,4 @@ volumes/postgres/*
 .env 
 README-private.md
 .DS_Store
+*.xx*
