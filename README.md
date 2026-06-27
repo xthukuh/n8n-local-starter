@@ -121,6 +121,12 @@ WEBHOOK_URL=https://your-chosen-subdomain.ngrok-free.app/
 ## 11. Start the Containers
 
 ```bash
+# Recreate `./volumes` to mitigate permission issues
+sudo rm -rf ./volumes # elevated force delete
+mkdir -p ./volumes/n8n
+mkdir -p ./volumes/postgres
+
+# Start container
 docker compose up -d
 ```
 
